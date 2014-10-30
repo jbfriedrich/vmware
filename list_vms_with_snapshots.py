@@ -10,10 +10,12 @@ import requests             # Imported to disable SSL warning
 
 # Parsing arguments
 parser = argparse.ArgumentParser(prog='list_vms_with_snapshots.py')
-parser.add_argument('-s', '--server', help='vCenter server name or IP address', required=True)
+parser.add_argument('-s', '--server', help='vCenter server name or IP address',
+                    required=True)
 parser.add_argument('-u', '--username', help='vCenter username', required=True)
 parser.add_argument('-p', '--password', help='vCenter password')
-parser.add_argument('-v', '--verbose', help='more information displayed')
+parser.add_argument('-v', '--verbose', help='more information displayed',
+                    action='store_true')
 
 args = parser.parse_args()
 
