@@ -8,42 +8,6 @@ from pyVim import connect
 from pyVmomi import vim
 import requests             # Imported to disable SSL warning
 
-# Parsing arguments
-parser = argparse.ArgumentParser(prog='list_vms_with_snapshots.py')
-parser.add_argument('-s', '--server', help='vCenter server name or IP address',
-                    required=True)
-parser.add_argument('-u', '--username', help='vCenter username', required=True)
-parser.add_argument('-p', '--password', help='vCenter password')
-parser.add_argument('-v', '--verbose', help='more information displayed',
-                    action='store_true')
-
-args = parser.parse_args()
-
-verbose = args.verbose
-hostname = args.server
-username = args.username
-passwd = args.password
-
-# Asking user for password if not specified on the commandline
-if passwd is None:
-    passwd = getpass.getpass()
-
-# Since all my VMware instances are using self-signed certificates, to which
-# I do not necessarily have access to the root CA, SSL warnings are disabled
-requests.packages.urllib3.disable_warnings()
-
-# Connectign to vCenter
-instance = connect.SmartConnect(host=hostname,
-                                user=username,
-                                pwd=passwd)
-# Getting instance content
-content = instance.RetrieveContent()
-
-# Accessing datacenter folder directly under root folder. For more information
-# about the hierarchy, see
-# http://vmware.github.io/pyvmomi-community-samples/assets/vchierarchy.pdf
-datacenters = content.rootFolder.childEntity
-
 # Function to look through all objects and identify Virtual Machines
 def find_vms_with_snapshots(item):
     if isinstance(item, vim.VirtualMachine):
@@ -116,6 +80,42 @@ def calculate_snapshot_age():
 
 # Start program
 if __name__ == "__main__":
+    # Parsing arguments
+    parser = argparse.ArgumentParser(prog='list_vms_with_snapshots.py')
+    parser.add_argument('-s', '--server', help='vCenter server name or IP address',
+                        required=True)
+    parser.add_argument('-u', '--username', help='vCenter username', required=True)
+    parser.add_argument('-p', '--password', help='vCenter password')
+    parser.add_argument('-v', '--verbose', help='more information displayed',
+                        action='store_true')
+
+    args = parser.parse_args()
+
+    verbose = args.verbose
+    hostname = args.server
+    username = args.username
+    passwd = args.password
+
+    # Asking user for password if not specified on the commandline
+    if passwd is None:
+        passwd = getpass.getpass()
+
+    # Since all my VMware instances are using self-signed certificates, to which
+    # I do not necessarily have access to the root CA, SSL warnings are disabled
+    requests.packages.urllib3.disable_warnings()
+
+    # Connectign to vCenter
+    instance = connect.SmartConnect(host=hostname,
+                                    user=username,
+                                    pwd=passwd)
+    # Getting instance content
+    content = instance.RetrieveContent()
+
+    # Accessing datacenter folder directly under root folder. For more information
+    # about the hierarchy, see
+    # http://vmware.github.io/pyvmomi-community-samples/assets/vchierarchy.pdf
+    datacenters = content.rootFolder.childEntity
+
     for datacenter in datacenters:
         if verbose:
             dc_name = datacenter.name
@@ -128,4 +128,5 @@ if __name__ == "__main__":
             find_vms_with_snapshots(item)
 
     # Clean exit
+    connect.disconnect(instance)
     sys.exit(0)
