@@ -12,6 +12,7 @@ import requests             # Imported to disable SSL warning
 # is supposed to help displaying folder hierarchy. Working on new output format
 def list_vm_info(virtual_machine, tabs=1):
     summary = virtual_machine.summary
+    hardware = virtual_machine.config.hardware.device
     print tabs * 3 * ' ' + '-> ' + summary.config.name
     print tabs * 3 * ' ' + '   ' + 'Distribution     :', summary.config.guestFullName
     print tabs * 3 * ' ' + '   ' + 'Hostname         :', summary.guest.hostName
@@ -21,6 +22,13 @@ def list_vm_info(virtual_machine, tabs=1):
     print tabs * 3 * ' ' + '   ' + 'vRAM (MB)        :', summary.config.memorySizeMB
     print tabs * 3 * ' ' + '   ' + 'Ethernet cards   :', summary.config.numEthernetCards
     print tabs * 3 * ' ' + '   ' + 'vDisks           :', summary.config.numVirtualDisks
+    for device in hardware:
+        if type(device) is vim.vm.device.VirtualDisk:
+            print tabs * 3 * ' ' + '   ' + '   Disk label       :', device.deviceInfo.label
+            if hasattr(device.backing, 'thinProvisioned'):
+                print tabs * 3 * ' ' + '   ' + '   Thin provisioned :', device.backing.thinProvisioned
+            else:
+                print tabs * 3 * ' ' + '   ' + '   Thin provisioned : N/A'
     print tabs * 3 * ' ' + '   ' + 'VM path          :', summary.config.vmPathName
     print tabs * 3 * ' ' + '   ' + 'Power state      :', summary.runtime.powerState
     
@@ -87,7 +95,7 @@ def identify_item(data_item, depth=1):
 # Start program
 if __name__ == "__main__":
     # Parsing arguments
-    parser = argparse.ArgumentParser(prog='list_vms_with_snapshots.py')
+    parser = argparse.ArgumentParser(prog='list_all_vms.py')
     parser.add_argument('-s', '--server', help='vCenter server name or IP address',
                         required=True)
     parser.add_argument('-u', '--username', help='vCenter username', required=True)
@@ -134,5 +142,5 @@ if __name__ == "__main__":
             identify_item(item)
 
     # Clean exit    
-    connect.disconnect(instance)
+    connect.Disconnect(instance)
     sys.exit(0)

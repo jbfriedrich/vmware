@@ -128,5 +128,5 @@ if __name__ == "__main__":
             find_vms_with_snapshots(item)
 
     # Clean exit
-    connect.disconnect(instance)
+    connect.Disconnect(instance)
     sys.exit(0)
