@@ -108,7 +108,12 @@ if __name__ == "__main__":
     else:
         print "Template '%s' found (%s)" % (template_name, template_vm)
 
-    ha_cluster      =   get_obj(content, 'cluster', cluster)
+    # If there is no argument specified for the cluster, we search for the object
+    if cluster is None:
+        ha_cluster      =   get_obj(content, 'cluster', cluster)
+    else:
+        ha_cluster      =   cluster
+
     resource_pool   =   get_obj(content, 'respool', resourcepool)
     data_store      =   get_obj(content, 'datastore', datastore)
 

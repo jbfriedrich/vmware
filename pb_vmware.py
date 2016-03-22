@@ -39,7 +39,7 @@ def vcenter_connect(host, username, password):
 # create folder
 def create_folder(content, vm_folder, foldername):
     if (get_obj(content, 'folder', foldername)) is None:
-        vmfolder.CreateFolder(foldername)
+        vm_folder.CreateFolder(foldername)
         print "Folder '%s' created" % (foldername)
     else:
         print "Folder with name '%s' already exists" % (foldername)
