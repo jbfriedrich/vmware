@@ -61,8 +61,12 @@ def get_obj(content, type, name):
         vimtype = [vim.VirtualMachine]
     elif type == 'datastore':
         vimtype = [vim.Datastore]
+    elif type == 'dstorecluster':
+        vimtype = [vim.StoragePod]
     elif type == 'network':
         vimtype = [vim.Network]
+    elif type == 'dvsportgroup':
+        vimtype = [vim.dvs.DistributedVirtualPortgroup]
     obj = None
     container = content.viewManager.CreateContainerView(
         content.rootFolder,
@@ -78,6 +82,42 @@ def get_obj(content, type, name):
             break
 
     return obj
+
+# get DVS port group by key from vCenter inventory
+def get_dvsportgroup_by_key(content, key):
+    vimtype = [vim.dvs.DistributedVirtualPortgroup]
+    dvsportgroup = None
+    container = content.viewManager.CreateContainerView(
+        content.rootFolder,
+        vimtype,
+        True
+    )
+    obj_list = container.view
+    # destroying the container to free up resources on the vCenter
+    container.Destroy()
+    for obj in obj_list:
+        if obj.key == key:
+            dvsportgroup = obj
+            break
+    return dvsportgroup
+
+# get DVS port group by name from vCenter inventory
+def get_dvsportgroup_by_name(content, name):
+    vimtype = [vim.dvs.DistributedVirtualPortgroup]
+    dvsportgroup = None
+    container = content.viewManager.CreateContainerView(
+        content.rootFolder,
+        vimtype,
+        True
+    )
+    obj_list = container.view
+    # destroying the container to free up resources on the vCenter
+    container.Destroy()
+    for obj in obj_list:
+        if obj.name == name:
+            dvsportgroup = obj
+            break
+    return dvsportgroup
 
 # print some VM info (including snapshots)
 def print_vm_info(vm):
@@ -172,9 +212,10 @@ def check_for_snapshots(virtual_machine):
     if hasattr(snapshot, 'currentSnapshot'):
         return True
 
+# Check on a task sent to vCenter
 def check_on_task(task):
     progress = ['|','/','-','\\']
-    sys.stdout.write('Cloning:  ')
+    sys.stdout.write('Progress:  ')
     sys.stdout.flush()
     while task.info.state == vim.TaskInfo.State.running:
         for i in progress:
@@ -184,11 +225,12 @@ def check_on_task(task):
 
     if task.info.state == vim.TaskInfo.State.success:
         print "\bDone"
-        print 'Cloning successfully completed'
+        print 'Task successfully completed'
     else:
-        print 'Cloning process failed! Check VMware logs:'
+        print 'Task failed! Check VMware logs:'
         print task.info.error
 
+# Clone a Virtual Machine
 def clone_vm(template, target, folder, datastore, respool):
     print 'Preparing relocating specification...'
     relspec             =   vim.vm.RelocateSpec()
@@ -207,6 +249,10 @@ def clone_vm(template, target, folder, datastore, respool):
         spec=clonespec
     )
     check_on_task(task)
+
+#def vm_change_host(vm, target_host, respool):
+#
+#def vm_change_dstore(vm, target_dstore, respool):
 
 # disconnect from vCenter after our work is done
 def vcenter_disconnect(service_instance):

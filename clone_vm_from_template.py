@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
 # Importing required modules
-from pb_vmware import *
-import argparse
-import sys
-import getpass
+from    pb_vmware   import *
+import  argparse
+import  sys
+import  getpass
 
 # Start program
 if __name__ == "__main__":
