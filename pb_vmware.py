@@ -172,20 +172,75 @@ def print_vm_info(vm):
     # We need some distance (divider)
     print ""
 
+# Detailed VM information in CSV format
+# The function prints the data in the following order:
+# VM ID,VM name,VM UUID,State,IP address,Hostname,GuestOS,vCPU,vRAM,
+# # of vDisks,# of vNICs,Network 1,Network 2,Network 3,Network 4,Folder,VM path
+def print_csv_vm_info(vm, content):
+    vm_name     = vm.summary.config.name
+    guest_os    = vm.summary.config.guestFullName
+    hostname    = vm.summary.guest.hostName
+    uuid        = vm.summary.config.uuid
+    folder      = vm.parent.name
+    state       = vm.summary.runtime.powerState
+    tools_state = vm.summary.guest.toolsRunningStatus
+    ip_address  = vm.summary.guest.ipAddress
+    vcpu        = vm.summary.config.numCpu
+    vram        = vm.summary.config.memorySizeMB
+    vnics       = vm.summary.config.numEthernetCards
+    vdisks      = vm.summary.config.numVirtualDisks
+    vmpath      = vm.summary.config.vmPathName
+    slot        = 1
+    maxslots    = 4
+    networks    = []
+
+    for device in vm.config.hardware.device:
+        # If the device is our network device
+        if isinstance(device, vim.vm.device.VirtualEthernetCard):
+            # We only print out a max of 4 networks
+            if slot > maxslots:
+                return
+            try:
+                portgrpkey      = device.backing.port.portgroupKey
+                dvsportgrp      = get_dvsportgroup_by_key(content, old_network_pgkey)
+                networks.append(dvsportgrp.name)
+            except:
+                vswitch_name    = device.backing.deviceName
+                networks.append(vswitch_name)
+            slot + 1
+
+    open_slots = maxslots - len(networks)
+    while open_slots > 0:
+        networks.append('n/a')
+        open_slots -= 1
+
+    network1 = networks[0]
+    network2 = networks[1]
+    network3 = networks[2]
+    network4 = networks[3]
+
+    print "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s" % (vm,vm_name,uuid,state,ip_address,hostname,guest_os,vcpu,vram,vdisks,vnics,network1,network2,network3,network4,folder,vmpath)
+
 # We just descend recursively until we reached max depth of 20
-def identify_item(data_item, depth=1):
+def vm_info(data_item, type, content, depth=1):
     maxdepth = 25
     if depth > maxdepth:
         return
     # If the object is a virtual machine, we want to display it's information
     if isinstance(data_item, vim.VirtualMachine):
-        print_vm_info(data_item)
+        if type == 'csv':
+            print_csv_vm_info(data_item, content)
+        elif type == 'text':
+            print_vm_info(data_item)
+        else:
+            print 'Wrong type, neither text nor csv'
+            return
     # If the object has child entities, we follow down the rabbit hole until we
     # reach maxdepth and identify every object on our way
     if hasattr(data_item, 'childEntity'):
         data_item_list = data_item.childEntity
         for item in data_item_list:
-            identify_item(item, depth + 1)
+            vm_info(item, type, content, depth + 1)
         return
 
 # Function to look through all objects and identify Virtual Machines

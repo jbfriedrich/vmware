@@ -121,6 +121,7 @@ if __name__ == "__main__":
             nicspec.device.backing = vim.vm.device.VirtualEthernetCard.DistributedVirtualPortBackingInfo()
             nicspec.device.backing.port = dvs_port_conn
             nicspec.device.connectable = vim.vm.device.VirtualDevice.ConnectInfo()
+            nicspec.device.connectable.connected = True
             nicspec.device.connectable.startConnected = True
             nicspec.device.connectable.allowGuestControl = True
 
