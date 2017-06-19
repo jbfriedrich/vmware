@@ -47,28 +47,29 @@ def create_folder(content, vm_folder, foldername):
 # get object from vCenter server inventory
 def get_obj(content, type, name):
     vimtype = None
-    if type == 'datacenter':
+    if type     == 'datacenter':
         vimtype = [vim.Datacenter]
-    elif type == 'cluster':
+    elif type   == 'cluster':
         vimtype = [vim.ClusterComputeResource]
-    elif type == 'respool':
+    elif type   == 'respool':
         vimtype = [vim.ResourcePool]
-    elif type == 'folder':
-        vimtype == [vim.Folder]
-    elif type == 'vm':
+    elif type   == 'folder':
+        vimtype = [vim.Folder]
+    elif type   == 'vm':
         vimtype = [vim.VirtualMachine]
-    elif type == 'template':
+    elif type   == 'template':
         vimtype = [vim.VirtualMachine]
-    elif type == 'datastore':
+    elif type   == 'datastore':
         vimtype = [vim.Datastore]
-    elif type == 'dstorecluster':
+    elif type   == 'dstorecluster':
         vimtype = [vim.StoragePod]
-    elif type == 'network':
+    elif type   == 'network':
         vimtype = [vim.Network]
-    elif type == 'dvsportgroup':
+    elif type   == 'dvsportgroup':
         vimtype = [vim.dvs.DistributedVirtualPortgroup]
-    obj = None
-    container = content.viewManager.CreateContainerView(
+
+    obj         = None
+    container   = content.viewManager.CreateContainerView(
         content.rootFolder,
         vimtype,
         True
