@@ -1,18 +1,22 @@
 #!/usr/bin/env python
+"""Helper module for easier pyVmomi use.
 
-# Yes, these are my first bigger Python scripts and this is my first
-# foolish and very amateur try of a Python module. Maybe, one day, it
-# will be a real module and
+Yes, these are my first bigger Python scripts and this is my first foolish
+and very amateur try of a Python module. Maybe, one day, it will be a real
+module and make everything right.
+"""
 
 from pyVim import connect
 from pyVmomi import vim
 import time
 import sys
-import ssl      # imported to define SSL context (see below)
-import requests # imported to disable SSL warning
+import ssl       # imported to define SSL context (see below)
+import requests  # imported to disable SSL warning
+
 
 # returns everything we need to work with vCenter
 def vcenter_connect(host, username, password):
+    """Connect to vCenter and return all variables needed."""
     # No warnign for self signed SSL certificates
     requests.packages.urllib3.disable_warnings()
     # Disabling SSL certificate verification
@@ -20,56 +24,59 @@ def vcenter_connect(host, username, password):
     # https://github.com/mistio/mist.io/issues/691
     # https://github.com/vmware/pyvmomi/issues/212
     # Disabling SSL certificate verification
-    context             =   ssl.SSLContext(ssl.PROTOCOL_TLSv1)
-    context.verify_mode =   ssl.CERT_NONE
-    instance            =   connect.SmartConnect(
-        host        =   host,
-        user        =   username,
-        pwd         =   password,
-        sslContext  =   context
+    context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+    context.verify_mode = ssl.CERT_NONE
+    instance = connect.SmartConnect(
+        host=host,
+        user=username,
+        pwd=password,
+        sslContext=context
     )
     # Getting instance content
-    content             =   instance.RetrieveContent()
-    datacenters         =   content.rootFolder.childEntity
-    datacenter          =   datacenters[0]
-    vm_folder           =   datacenter.vmFolder
+    content = instance.RetrieveContent()
+    datacenters = content.rootFolder.childEntity
+    datacenter = datacenters[0]
+    vm_folder = datacenter.vmFolder
 
     return instance, content, datacenters, datacenter, vm_folder
 
+
 # create folder
 def create_folder(content, vm_folder, foldername):
+    """Create folder in VM view."""
     if (get_obj(content, 'folder', foldername)) is None:
         vm_folder.CreateFolder(foldername)
         print "Folder '%s' created" % (foldername)
     else:
         print "Folder with name '%s' already exists" % (foldername)
 
-# get object from vCenter server inventory
+
 def get_obj(content, type, name):
+    """Get object from vCenter server inventory."""
     vimtype = None
-    if type     == 'datacenter':
+    if type == 'datacenter':
         vimtype = [vim.Datacenter]
-    elif type   == 'cluster':
+    elif type == 'cluster':
         vimtype = [vim.ClusterComputeResource]
-    elif type   == 'respool':
+    elif type == 'respool':
         vimtype = [vim.ResourcePool]
-    elif type   == 'folder':
+    elif type == 'folder':
         vimtype = [vim.Folder]
-    elif type   == 'vm':
+    elif type == 'vm':
         vimtype = [vim.VirtualMachine]
-    elif type   == 'template':
+    elif type == 'template':
         vimtype = [vim.VirtualMachine]
-    elif type   == 'datastore':
+    elif type == 'datastore':
         vimtype = [vim.Datastore]
-    elif type   == 'dstorecluster':
+    elif type == 'dstorecluster':
         vimtype = [vim.StoragePod]
-    elif type   == 'network':
+    elif type == 'network':
         vimtype = [vim.Network]
-    elif type   == 'dvsportgroup':
+    elif type == 'dvsportgroup':
         vimtype = [vim.dvs.DistributedVirtualPortgroup]
 
-    obj         = None
-    container   = content.viewManager.CreateContainerView(
+    obj = None
+    container = content.viewManager.CreateContainerView(
         content.rootFolder,
         vimtype,
         True
@@ -84,8 +91,9 @@ def get_obj(content, type, name):
 
     return obj
 
-# get DVS port group by key from vCenter inventory
+
 def get_dvsportgroup_by_key(content, key):
+    """Get DVS port group by key from vCenter inventory."""
     vimtype = [vim.dvs.DistributedVirtualPortgroup]
     dvsportgroup = None
     container = content.viewManager.CreateContainerView(
@@ -102,8 +110,9 @@ def get_dvsportgroup_by_key(content, key):
             break
     return dvsportgroup
 
-# get DVS port group by name from vCenter inventory
+
 def get_dvsportgroup_by_name(content, name):
+    """Get DVS port group by name from vCenter inventory."""
     vimtype = [vim.dvs.DistributedVirtualPortgroup]
     dvsportgroup = None
     container = content.viewManager.CreateContainerView(
@@ -120,10 +129,11 @@ def get_dvsportgroup_by_name(content, name):
             break
     return dvsportgroup
 
-# print some VM info (including snapshots)
+
 def print_vm_info(vm):
-    summary     =   vm.summary
-    #config      =   vm.config
+    """Print some VM info (including snapshots)."""
+    summary = vm.summary
+#   config = vm.config
     print 'VM name        :', summary.config.name
     print 'Guest OS       :', summary.config.guestFullName
     print 'Hostname       :', summary.guest.hostName
@@ -145,9 +155,9 @@ def print_vm_info(vm):
     if hasattr(snapshot, 'currentSnapshot'):
         sys.stdout.write('Snapshots      : ')
         # Getting info about the root snapshot and displaying it
-        root_snapshot       =   snapshot.rootSnapshotList[0]
-        root_snapshot_name  =   root_snapshot.name
-        root_snapshot_date  =   root_snapshot.createTime
+        root_snapshot = snapshot.rootSnapshotList[0]
+        root_snapshot_name = root_snapshot.name
+        root_snapshot_date = root_snapshot.createTime
         print "%s: %s" % (root_snapshot_date, root_snapshot_name)
         # If the root snapshot has children, lets see its ugly faces
         if (root_snapshot.childSnapshotList):
@@ -163,38 +173,41 @@ def print_vm_info(vm):
                             second_snapshot.createTime,
                             second_snapshot.name
                         )
-                        # If there are more snapshots, go use the vSphere Client
+                        # To see more snapshots, use the vSphere Client
                         if (second_snapshot.childSnapshotList):
                             print '                 WARNING:' \
-                            ' This VM has more than 3 snapshots'
+                                ' This VM has more than 3 snapshots'
     # VM has no snapshots :(
     else:
         print 'Snapshots      : No'
     # We need some distance (divider)
     print ""
 
-# Detailed VM information in CSV format
-# The function prints the data in the following order:
-# VM ID,VM name,VM UUID,State,IP address,Hostname,GuestOS,vCPU,vRAM,
-# # of vDisks,# of vNICs,Network 1,Network 2,Network 3,Network 4,Folder,VM path
-def print_csv_vm_info(vm, content):
-    vm_name     = vm.summary.config.name
-    guest_os    = vm.summary.config.guestFullName
-    hostname    = vm.summary.guest.hostName
-    uuid        = vm.summary.config.uuid
-    folder      = vm.parent.name
-    state       = vm.summary.runtime.powerState
-    tools_state = vm.summary.guest.toolsRunningStatus
-    ip_address  = vm.summary.guest.ipAddress
-    vcpu        = vm.summary.config.numCpu
-    vram        = vm.summary.config.memorySizeMB
-    vnics       = vm.summary.config.numEthernetCards
-    vdisks      = vm.summary.config.numVirtualDisks
-    vmpath      = vm.summary.config.vmPathName
-    slot        = 1
-    maxslots    = 4
-    networks    = []
 
+def print_csv_vm_info(vm, content):
+    """Detailed VM information in CSV format."""
+    vm_name = vm.summary.config.name
+    guest_os = vm.summary.config.guestFullName
+    hostname = vm.summary.guest.hostName
+    uuid = vm.summary.config.uuid
+    folder = vm.parent.name
+    state = vm.summary.runtime.powerState
+    tools_state = vm.summary.guest.toolsRunningStatus
+    ip_address = vm.summary.guest.ipAddress
+    vcpu = vm.summary.config.numCpu
+    vram = vm.summary.config.memorySizeMB
+    vnics = vm.summary.config.numEthernetCards
+    vdisks = vm.summary.config.numVirtualDisks
+    vmpath = vm.summary.config.vmPathName
+    slot = 1
+    maxslots = 4
+    networks = []
+    """
+    The function prints the data in the following order:
+    VM ID,VM name,VM UUID,State,IP address,Hostname,GuestOS,vCPU,vRAM,
+    no. of vDisks, no. of vNICs,Network 1,Network 2,Network 3,Network 4,
+    VMware Tools, Folder,VM path
+    """
     for device in vm.config.hardware.device:
         # If the device is our network device
         if isinstance(device, vim.vm.device.VirtualEthernetCard):
@@ -202,11 +215,13 @@ def print_csv_vm_info(vm, content):
             if slot > maxslots:
                 return
             try:
-                portgrpkey      = device.backing.port.portgroupKey
-                dvsportgrp      = get_dvsportgroup_by_key(content, old_network_pgkey)
+                old_network_pgkey = device.backing.port.portgroupKey
+                dvsportgrp = get_dvsportgroup_by_key(content,
+                                                     old_network_pgkey
+                                                     )
                 networks.append(dvsportgrp.name)
             except:
-                vswitch_name    = device.backing.deviceName
+                vswitch_name = device.backing.deviceName
                 networks.append(vswitch_name)
             slot + 1
 
@@ -220,10 +235,30 @@ def print_csv_vm_info(vm, content):
     network3 = networks[2]
     network4 = networks[3]
 
-    print "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s" % (vm,vm_name,uuid,state,ip_address,hostname,guest_os,vcpu,vram,vdisks,vnics,network1,network2,network3,network4,folder,vmpath)
+    print "%s,%s,%s,%s,%s,%s,%s,%s,%s,\
+        %s,%s,%s,%s,%s,%s,%s,%s,%s" % (vm,
+                                       vm_name,
+                                       uuid,
+                                       state,
+                                       ip_address,
+                                       hostname,
+                                       guest_os,
+                                       vcpu,
+                                       vram,
+                                       vdisks,
+                                       vnics,
+                                       network1,
+                                       network2,
+                                       network3,
+                                       network4,
+                                       tools_state,
+                                       folder,
+                                       vmpath
+                                       )
 
-# We just descend recursively until we reached max depth of 20
+
 def vm_info(data_item, type, content, depth=1):
+    """We just descend recursively until we reached max depth of 20."""
     maxdepth = 25
     if depth > maxdepth:
         return
@@ -244,8 +279,9 @@ def vm_info(data_item, type, content, depth=1):
             vm_info(item, type, content, depth + 1)
         return
 
-# Function to look through all objects and identify Virtual Machines
+
 def list_vms_with_snapshots(item):
+    """Look through all objects and identify Virtual Machines."""
     if isinstance(item, vim.VirtualMachine):
         if check_for_snapshots(item):
             print_vm_info(item)
@@ -255,22 +291,25 @@ def list_vms_with_snapshots(item):
         for subitem in item_list:
             list_vms_with_snapshots(subitem)
 
-# check if object is a VM template
+
 def check_if_template(object):
-    if object.config.template == True:
+    """Check if object is a VM template."""
+    if object.config.template is True:
         return True
     else:
         return False
 
-# Check if the Virtual Machine has any snapshots
+
 def check_for_snapshots(virtual_machine):
+    """Check if the Virtual Machine has any snapshots."""
     snapshot = virtual_machine.snapshot
     if hasattr(snapshot, 'currentSnapshot'):
         return True
 
-# Check on a task sent to vCenter
+
 def check_on_task(task):
-    progress = ['|','/','-','\\']
+    """Check on a task sent to vCenter."""
+    progress = ['|', '/', '-', '\\']
     sys.stdout.write('Progress:  ')
     sys.stdout.flush()
     while task.info.state == vim.TaskInfo.State.running:
@@ -286,14 +325,15 @@ def check_on_task(task):
         print 'Task failed! Check VMware logs:'
         print task.info.error
 
-# Clone a Virtual Machine
+
 def clone_vm(template, target, folder, datastore, respool):
+    """Clone a Virtual Machine."""
     print 'Preparing relocating specification...'
-    relspec             =   vim.vm.RelocateSpec()
-    relspec.datastore   =   datastore
-    relspec.pool        =   respool
+    relspec = vim.vm.RelocateSpec()
+    relspec.datastore = datastore
+    relspec.pool = respool
     print 'Preparing cloning specification...'
-    clonespec  =   vim.vm.CloneSpec(
+    clonespec = vim.vm.CloneSpec(
         powerOn=False,
         template=False,
         location=relspec
@@ -306,13 +346,14 @@ def clone_vm(template, target, folder, datastore, respool):
     )
     check_on_task(task)
 
-#def vm_change_host(vm, target_host, respool):
-#
-#def vm_change_dstore(vm, target_dstore, respool):
+# def vm_change_host(vm, target_host, respool):
+# def vm_change_dstore(vm, target_dstore, respool):
 
-# disconnect from vCenter after our work is done
+
 def vcenter_disconnect(service_instance):
+    """Disconnect from vCenter after our work is done."""
     connect.Disconnect(service_instance)
+
 
 # Start program
 if __name__ == "__main__":
