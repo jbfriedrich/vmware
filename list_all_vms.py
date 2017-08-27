@@ -1,10 +1,11 @@
 #!/usr/bin/env python
+"""List all Virtual Machines."""
 
 # Importing required modules
-import  argparse
-import  sys
-import  getpass
-from    pb_vmware   import *
+import argparse
+import sys
+import getpass
+from pb_vmware import vcenter_connect, vcenter_disconnect, vm_info
 
 # Start program
 if __name__ == "__main__":
@@ -41,12 +42,12 @@ if __name__ == "__main__":
         help='more information displayed',
         action='store_true'
     )
-    args        = parser.parse_args()
-    verbose     = args.verbose
-    hostname    = args.server
-    username    = args.username
-    passwd      = args.password
-    csv_style   = args.csv
+    args = parser.parse_args()
+    verbose = args.verbose
+    hostname = args.server
+    username = args.username
+    passwd = args.password
+    csv_style = args.csv
     # Asking user for password if not specified on the commandline
     if passwd is None:
         passwd = getpass.getpass()
@@ -59,12 +60,13 @@ if __name__ == "__main__":
 
     vm_folder = datacenter.vmFolder
     item_list = vm_folder.childEntity
-    if csv_style == True:
-        print ( 'VM ID,VM name,VM UUID,State,IP address,Hostname,GuestOS,vCPU,'
-                'vRAM,# of vDisks,# of vNICs,Network 1,Network 2,Network 3,'
-                'Network 4,Folder,VM path' )
+    if csv_style is True:
+        print ('VM ID,VM name,VM UUID,State,IP address,Hostname, \
+               GuestOS,vCPU,vRAM,# of vDisks,# of vNICs,Network 1, \
+               Network 2,Network 3,Network 4,VMware Tools,Folder,VM path'
+               )
     for item in item_list:
-        if csv_style == True:
+        if csv_style is True:
             vm_info(item, 'csv', content)
         else:
             vm_info(item, 'text', content)
